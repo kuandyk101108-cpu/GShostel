@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GS Hostel — Админ Панель</title>
+    <style>
+        * { box-sizing: border-box; font-family: 'Segoe UI', Roboto, sans-serif; }
+        body { background: #f4f6f9; margin: 0; padding: 20px; color: #2c3e50; }
+        
+        .admin-header {
+            background: linear-gradient(135deg, #1a252f 0%, #2c3e50 100%);
+            color: #fff;
+            padding: 20px 25px;
+            border-radius: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .admin-header h1 { margin: 0; font-size: 22px; color: #16a085; }
+        .admin-header p { margin: 5px 0 0 0; font-size: 13px; color: #bdc3c7; }
+
+        .btn-refresh {
+            background: #16a085;
+            color: #fff;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.2s, transform 0.1s;
+        }
+        .btn-refresh:active {
+            transform: scale(0.96);
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: #fff;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            border: 1px solid #e1e8ed;
+        }
+        .card h2 {
+            margin-top: 0;
+            font-size: 18px;
+            color: #1a252f;
+            border-bottom: 2px solid #16a085;
+            padding-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .room-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px dashed #e1e8ed;
+        }
+        .room-row:last-child { border-bottom: none; }
+        .room-info { font-size: 14px; font-weight: 600; }
+        .room-sub { font-size: 12px; color: #7f8c8d; }
+
+        .counter-btn-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-cnt {
+            width: 32px;
+            height: 32px;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 16px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .btn-minus { background: #fee2e2; color: #dc2626; }
+        .btn-plus { background: #dcfce7; color: #16a34a; }
+        .btn-cnt:hover { opacity: 0.8; }
+        
+        .cnt-val {
+            font-weight: bold;
+            font-size: 15px;
+            width: 25px;
+            text-align: center;
+        }
+
+        .table-responsive { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
+        th, td { text-align: left; padding: 10px; border-bottom: 1px solid #e1e8ed; }
+        th { background: #f8fafb; color: #7f8c8d; font-weight: 600; }
+        
+        .badge-active { background: #dcfce7; color: #15803d; padding: 3px 8px; border-radius: 12px; font-weight: bold; font-size: 11px; }
+
+        .btn-main {
+            background: #16a085;
+            color: #fff;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+        .btn-reset { background: #e74c3c; margin-top: 20px; }
+    </style>
+</head>
+<body>
+
+    <div class="admin-header">
+        <div>
+            <h1>🔑 Админ-Панель GS Hostel</h1>
+            <p>Управление коечным фондом и бронированиями</p>
+        </div>
+        <button type="button" id="btn-refresh-trigger" class="btn-refresh" onclick="manualRefresh(this)">🔄 Обновить</button>
+    </div>
+
+    <!-- Редактор комнат и свободных мест -->
+    <div class="dashboard-grid" id="admin-rooms-grid"></div>
+
+    <!-- Таблица бронирований -->
+    <div class="card">
+        <h2>📋 Текущие проживающие и выезды</h2>
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Гость / Телефон</th>
+                        <th>Комната</th>
+                        <th>Мест</th>
+                        <th>Дата/Время выезда</th>
+                        <th>Статус</th>
+                        <th>Действие</th>
+                    </tr>
+                </thead>
+                <tbody id="bookings-table-body"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <button type="button" class="btn-main btn-reset" onclick="resetAllData()">⚠️ Сбросить все места (Освободить 100%)</button>
+
+<script>
+    // ⚠️ ВСТАВЬТЕ СЮДА ВАШУ ССЫЛКУ ИЗ NPOINT (НАПРИМЕР: https://api.npoint.io/abc123xyz456)
+    const API_URL = "https://api.npoint.io/1234567890abcdef1234"; 
+
+    // Базовое состояние базы на случай сброса
+    const defaultHostelData = {
+        rooms: {
+            "vip": { title: "VIP-номер (2 чел.)", price: 12000, img: "https://encrypted-tbn0.gstatic.com/licensed-image?q=tbn:ANd9GcSnIaGdo6fdJPLghhV8CQB25Z7qodX7wnOr24mjGioOpdHI18YpR_ovJ9J_Gnn30spNJMMJW0mQBxX3s3I", rooms: [{ id: "vip_1", name: "VIP номер", total: 1, free: 1 }] },
+            "family": { title: "Семейный (4 чел.)", price: 18000, img: "https://encrypted-tbn2.gstatic.com/licensed-image?q=tbn:ANd9GcTmWO7d_LCTzKhpFDtuKLLPpJDpXLcoswRV5LBqDhFAXw166PKE_h8-WsnzwHI1YtDQ44Q6DXzqTr5LG-Y", rooms: [{ id: "fam_1", name: "Семейный номер", total: 1, free: 1 }] },
+            "male": { 
+                title: "Мужской номер", price: 6000, img: "https://i.ibb.co.com/XrrhR3Ff/photo-2026-09-26-03-47-37.jpg",
+                rooms: [
+                    { id: "m_1", name: "Комната №1 (8 мест)", total: 8, free: 8 },
+                    { id: "m_2", name: "Комната №2 (8 мест)", total: 8, free: 8 },
+                    { id: "m_3", name: "Комната №3 (8 мест)", total: 8, free: 8 }
+                ] 
+            },
+            "female": { 
+                title: "Женский номер", price: 6000, img: "https://i.ibb.co.com/zTmjR0fH/photo-2026-09-26-03-47-52.jpg",
+                rooms: [
+                    { id: "f_1", name: "Комната №1 (14 мест)", total: 14, free: 14 },
+                    { id: "f_2", name: "Комната №2 (10 мест)", total: 10, free: 10 }
+                ] 
+            }
+        },
+        bookings: []
+    };
+
+    let currentDB = { rooms: {}, bookings: [] };
+
+    // Загрузка данных из облака
+    async function fetchDatabase() {
+        try {
+            const res = await fetch(API_URL);
+            const data = await res.json();
+            
+            // Если в npoint еще пустой объект или нет ключа rooms, ставим структуру по умолчанию
+            if (!data || !data.rooms) {
+                currentDB = defaultHostelData;
+                await saveDatabase();
+            } else {
+                currentDB = data;
+            }
+
+            renderAdminRooms();
+            renderBookingsTable();
+        } catch (err) {
+            console.error("Ошибка загрузки данных из сети:", err);
+        }
+    }
+
+    // Сохранение обновлений в облако npoint
+    async function saveDatabase() {
+        try {
+            await fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(currentDB)
+            });
+            renderAdminRooms();
+            renderBookingsTable();
+        } catch (err) {
+            console.error("Ошибка сохранения данных в сеть:", err);
+        }
+    }
+
+    // Отображение карточек комнат и мест
+    function renderAdminRooms() {
+        const grid = document.getElementById('admin-rooms-grid');
+        if (!grid || !currentDB.rooms) return;
+        
+        grid.innerHTML = '';
+
+        for (let catKey in currentDB.rooms) {
+            const cat = currentDB.rooms[catKey];
+            let totalFree = cat.rooms.reduce((acc, r) => acc + r.free, 0);
+            let totalAll = cat.rooms.reduce((acc, r) => acc + r.total, 0);
+
+            let roomsRows = '';
+            cat.rooms.forEach(r => {
+                roomsRows += `
+                    <div class="room-row">
+                        <div>
+                            <div class="room-info">${r.name}</div>
+                            <div class="room-sub">Всего: ${r.total} мест</div>
+                        </div>
+                        <div class="counter-btn-group">
+                            <button type="button" class="btn-cnt btn-minus" onclick="updateRoomFree('${catKey}', '${r.id}', -1)">-</button>
+                            <span class="cnt-val">${r.free}</span>
+                            <button type="button" class="btn-cnt btn-plus" onclick="updateRoomFree('${catKey}', '${r.id}', 1)">+</button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            grid.innerHTML += `
+                <div class="card">
+                    <h2>
+                        <span>${cat.title}</span>
+                        <span style="font-size:14px; color:#16a085;">${totalFree} / ${totalAll} свободна</span>
+                    </h2>
+                    ${roomsRows}
+                </div>
+            `;
+        }
+    }
+
+    // Изменение свободных мест при клике на кнопки "+" и "-"
+    async function updateRoomFree(catKey, roomId, delta) {
+        if (!currentDB.rooms[catKey]) return;
+        let room = currentDB.rooms[catKey].rooms.find(r => r.id === roomId);
+        
+        if (room) {
+            let newVal = room.free + delta;
+            if (newVal >= 0 && newVal <= room.total) {
+                room.free = newVal;
+                await saveDatabase();
+            }
+        }
+    }
+
+    // Отрисовка таблицы с бронированиями
+    function renderBookingsTable() {
+        const tbody = document.getElementById('bookings-table-body');
+        if (!tbody) return;
+        tbody.innerHTML = '';
+
+        if (!currentDB.bookings || currentDB.bookings.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#888;">Активных бронирований нет</td></tr>';
+            return;
+        }
+
+        currentDB.bookings.forEach((b, index) => {
+            let roomName = 'Комната';
+            for (let catKey in currentDB.rooms) {
+                let r = currentDB.rooms[catKey].rooms.find(rm => rm.id === b.roomId);
+                if (r) { roomName = r.name; break; }
+            }
+
+            tbody.innerHTML += `
+                <tr>
+                    <td><b>${b.guestName || 'Заявка с сайта'}</b><br><small style="color:#888">${b.guestPhone || ''}</small></td>
+                    <td>${roomName}</td>
+                    <td><b>${b.guestsCount} чел.</b></td>
+                    <td>${b.checkoutDateTime ? b.checkoutDateTime.replace('T', ' ') : '-'}</td>
+                    <td><span class="badge-active">Заселён</span></td>
+                    <td>
+                        <button type="button" style="background:#e74c3c; color:#fff; border:none; padding:5px 10px; border-radius:5px; cursor:pointer; font-size:12px;" onclick="releaseBookingEarly(${index})">
+                            Выселить
+                        </button>
+                    </td>
+                </tr>
+            `;
+        });
+    }
+
+    // Выселение гостя
+    async function releaseBookingEarly(index) {
+        let b = currentDB.bookings[index];
+        if (b) {
+            for (let catKey in currentDB.rooms) {
+                let room = currentDB.rooms[catKey].rooms.find(r => r.id === b.roomId);
+                if (room) {
+                    room.free = Math.min(room.total, room.free + b.guestsCount);
+                    break;
+                }
+            }
+            currentDB.bookings.splice(index, 1);
+            await saveDatabase();
+        }
+    }
+
+    // Кнопка полных настроек / сброса
+    async function resetAllData() {
+        if (confirm('Сбросить все комнаты к 100% свободных мест?')) {
+            currentDB = defaultHostelData;
+            await saveDatabase();
+        }
+    }
+
+    // Ручное обновление данных по кнопке
+    function manualRefresh(btn) {
+        fetchDatabase();
+        if (btn) {
+            btn.innerHTML = '✓ Обновлено';
+            btn.style.background = '#27ae60';
+            setTimeout(() => {
+                btn.innerHTML = '🔄 Обновить';
+                btn.style.background = '#16a085';
+            }, 600);
+        }
+    }
+
+    // Авто-обновление из облака каждые 4 секунды
+    setInterval(fetchDatabase, 4000);
+    
+    // Первичная загрузка при открытии
+    window.addEventListener('DOMContentLoaded', fetchDatabase);
+</script>
+
+</body>
+</html>
