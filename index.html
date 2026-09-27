@@ -1992,7 +1992,89 @@
       createdAt: new Date().toISOString()
     });
   };
+  // 1. Собираем данные из ваших полей на сайте (поменяйте ID полей на ваши, если они отличаются)
+const bookingData = {
+    guestName: document.getElementById('guest-name').value,       // Имя гостя
+    guestPhone: document.getElementById('guest-phone').value,     // Телефон
+    roomId: document.getElementById('room-select').value,         // ID комнаты (например, 'm_1', 'f_1', 'vip_1')
+    roomName: "Мужская комната №1",                               // Название комнаты
+    guestsCount: parseInt(document.getElementById('guests-count').value) || 1, // Кол-во мест
+    checkinDate: document.getElementById('checkin-date').value,   // Дата заезда
+    checkoutDateTime: document.getElementById('checkout-date').value + 'T12:00' // Дата/время выезда
+};
+
+// 2. Вставляем вот этот вызов отправки в Firebase:
+if (typeof window.makeBookingInFirebase === 'function') {
+    const success = await window.makeBookingInFirebase(bookingData);
+    if (success) {
+        alert("Бронирование успешно оформлено!");
+    }
+}
 </script>
+
+...
+
+    <!-- Подключение Firebase для отправки данных с любого телефона -->
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+      import { getDatabase, ref, push, set, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+      const firebaseConfig = {
+        apiKey: "AIzaSyDeGgiX48dBFurvnNKh24p_0vglPkEz1fk",
+        authDomain: "gshostel-2774c.firebaseapp.com",
+        projectId: "gshostel-2774c",
+        storageBucket: "gshostel-2774c.firebasestorage.app",
+        messagingSenderId: "2821546272",
+        appId: "1:2821546272:web:36f595cc9490195f487745",
+        measurementId: "G-11GN6NF2DK",
+        databaseURL: "https://gshostel-2774c-default-rtdb.firebaseio.com"
+      };
+
+      const app = initializeApp(firebaseConfig);
+      const db = getDatabase(app);
+
+      // Функция для отправки брони в облако Firebase
+      window.makeBookingInFirebase = async function(bookingData) {
+        try {
+          // 1. Получаем текущие данные комнат из облака
+          const roomsRef = ref(db, 'rooms');
+          const snapshot = await get(roomsRef);
+          let roomsData = snapshot.val();
+
+          if (!roomsData) return false;
+
+          // 2. Ищем забронированную комнату и списываем свободные места
+          let roomFound = false;
+          for (let catKey in roomsData) {
+            let room = roomsData[catKey].rooms.find(r => r.id === bookingData.roomId);
+            if (room) {
+              if (room.free < bookingData.guestsCount) {
+                alert('К сожалению, не хватает свободных мест!');
+                return false;
+              }
+              room.free -= bookingData.guestsCount;
+              roomFound = true;
+              break;
+            }
+          }
+
+          if (!roomFound) return false;
+
+          // 3. Сохраняем обновленные свободные места в Firebase
+          await set(ref(db, 'rooms'), roomsData);
+
+          // 4. Добавляем новую запись бронирования в Firebase
+          const newBookingRef = push(ref(db, 'bookings'));
+          await set(newBookingRef, bookingData);
+
+          return true;
+        } catch (error) {
+          console.error("Ошибка при отправке в Firebase:", error);
+          alert("Ошибка подключения к серверу. Попробуйте ещё раз.");
+          return false;
+        }
+      };
+    </script>
 
 </body>
 </html>
