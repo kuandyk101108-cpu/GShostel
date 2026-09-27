@@ -1361,6 +1361,9 @@
 <!-- EmailJS -->
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 
+<!-- EmailJS -->
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+
 <script>
     (function() { emailjs.init("TIdW62J2L_Qoq6GD1"); })();
 
@@ -1368,7 +1371,7 @@
         "vip": { 
             title: "VIP-номер (до 2 чел.)", 
             price: 12000, 
-            type: "room", // Цена за ВЕСЬ номер
+            type: "room", 
             maxCapacity: 2,
             img: "https://encrypted-tbn0.gstatic.com/licensed-image?q=tbn:ANd9GcSnIaGdo6fdJPLghhV8CQB25Z7qodX7wnOr24mjGioOpdHI18YpR_ovJ9J_Gnn30spNJMMJW0mQBxX3s3I", 
             rooms: [{ id: "vip_1", name: "VIP номер", total: 1, free: 1 }] 
@@ -1376,7 +1379,7 @@
         "family": { 
             title: "Семейный (до 4 чел.)", 
             price: 18000, 
-            type: "room", // Цена за ВЕСЬ номер
+            type: "room", 
             maxCapacity: 4,
             img: "https://encrypted-tbn2.gstatic.com/licensed-image?q=tbn:ANd9GcTmWO7d_LCTzKhpFDtuKLLPpJDpXLcoswRV5LBqDhFAXw166PKE_h8-WsnzwHI1YtDQ44Q6DXzqTr5LG-Y", 
             rooms: [{ id: "fam_1", name: "Семейный номер", total: 1, free: 1 }] 
@@ -1384,7 +1387,7 @@
         "male": { 
             title: "Мужской номер", 
             price: 6000, 
-            type: "bed", // Цена за КОЙКУ (человека)
+            type: "bed", 
             maxCapacity: 24,
             img: "https://i.ibb.co.com/XrrhR3Ff/photo-2026-09-26-03-47-37.jpg",
             rooms: [
@@ -1396,7 +1399,7 @@
         "female": { 
             title: "Женский номер", 
             price: 6000, 
-            type: "bed", // Цена за КОЙКУ (человека)
+            type: "bed", 
             maxCapacity: 24,
             img: "https://i.ibb.co.com/zTmjR0fH/photo-2026-09-26-03-47-52.jpg",
             rooms: [
@@ -1407,8 +1410,19 @@
     };
 
     let activeGuestType = 'rk';
+    let currentNights = 1;
+    let currentGuests = 1;
+    let selectedCatKey = '';
 
-    // Автоматическая освобождаемость мест по истечении времени выезда
+    function getHostelData() {
+        const saved = localStorage.getItem('gs_hostel_rooms');
+        return saved ? JSON.parse(saved) : defaultHostelData;
+    }
+
+    function saveHostelData(data) {
+        localStorage.setItem('gs_hostel_rooms', JSON.stringify(data));
+    }
+
     function checkAndReleaseBookings() {
         const data = getHostelData();
         let activeBookings = JSON.parse(localStorage.getItem('gs_active_bookings') || '[]');
@@ -1418,7 +1432,6 @@
         activeBookings = activeBookings.filter(booking => {
             const checkoutDate = new Date(booking.checkoutDateTime);
             if (now >= checkoutDate) {
-                // Возвращаем места обратно в комнаты
                 for (let catKey in data) {
                     let room = data[catKey].rooms.find(r => r.id === booking.roomId);
                     if (room) {
@@ -1427,7 +1440,7 @@
                         break;
                     }
                 }
-                return false; // Удаляем просроченную бронь
+                return false;
             }
             return true;
         });
@@ -1457,15 +1470,6 @@
             if (titleEl) titleEl.innerText = "Требование (Юрлицо / ИП):";
             if (textEl) textEl.innerHTML = "Пожалуйста, отправьте ваши <b>Реквизиты организации (БИН/ИИН)</b> в электронном виде или фото администратору в WhatsApp после оформления счета.";
         }
-    }
-
-    function getHostelData() {
-        const saved = localStorage.getItem('gs_hostel_rooms');
-        return saved ? JSON.parse(saved) : defaultHostelData;
-    }
-
-    function saveHostelData(data) {
-        localStorage.setItem('gs_hostel_rooms', JSON.stringify(data));
     }
 
     function updateGuestsDropdown() {
@@ -1504,10 +1508,6 @@
         }
     }
 
-    let currentNights = 1;
-    let currentGuests = 1;
-    let selectedCatKey = '';
-
     function calculateNights() {
         const checkinVal = document.getElementById('checkin-date').value;
         const checkoutVal = document.getElementById('checkout-date').value;
@@ -1541,6 +1541,7 @@
         const data = getHostelData();
         const grid = document.getElementById('rooms-client-grid');
         const selectedGender = document.getElementById('guest-gender').value;
+        if (!grid) return;
         grid.innerHTML = '';
 
         for (let catKey in data) {
@@ -1762,7 +1763,7 @@
             console.error('Email Error:', e);
         }
 
-        const adminWhatsapp = "77021234567"; // Указать актуальный номер администратора
+        const adminWhatsapp = "77021234567";
         const waText = encodeURIComponent(`Здравствуйте! Мое бронирование #${bookingId} (${name}, ${genderText}, ${guestCategoryTitle}). Вышлите счет Kaspi Pay. Направляю вам ${docRequirementName} (фото/электронно):`);
         
         document.getElementById('whatsappSendBtn').href = `https://wa.me/${adminWhatsapp}?text=${waText}`;
@@ -1775,6 +1776,7 @@
         document.getElementById('kaspi-success-step').style.display = 'block';
     }
 
+    // Инициализация при загрузке страницы
     window.addEventListener('DOMContentLoaded', () => {
         const today = new Date();
         const tomorrow = new Date(today);
@@ -1785,57 +1787,15 @@
 
         calculateNights();
     });
-    
-    // Конфигурация категорий и комнат Google Apps Script
-    function getInitialHostelData() {
-        return defaultHostelData;
-    }
 
-    function doGet(e) {
-        var page = e.parameter.page || 'index';
-        if (page === 'admin') {
-            return HtmlService.createHtmlOutputFromFile('admin')
-                .setTitle('GS Hostel - Админ Панель')
-                .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
-        }
-        return HtmlService.createHtmlOutputFromFile('index')
-            .setTitle('GS Hostel - Бронирование')
-            .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
-    }
-
-    // Отправка HTML-письма подтверждения
-    function sendBookingEmail(bookingDetails) {
-        try {
-            var recipient = bookingDetails.guestEmail || "admin@gshostel.com";
-            var subject = "✨ Подтверждение бронирования #" + bookingDetails.bookingId + " — GS Hostel";
-            
-            var template = HtmlService.createTemplateFromFile('email');
-            template.b = bookingDetails;
-            
-            var htmlBody = template.evaluate().getContent();
-            
-            MailApp.sendEmail({
-                to: recipient,
-                subject: subject,
-                htmlBody: htmlBody
-            });
-            
-            return { success: true };
-        } catch (error) {
-            Logger.log("Ошибка отправки почты: " + error.toString());
-            return { success: false, error: error.toString() };
-        }
-    }
-   // ===== СИНХРОНИЗАЦИЯ С АДМИН-ПАНЕЛЬЮ В РЕАЛЬНОМ ВРЕМЕНИ =====
-
-    // 1. Автоматический перерасчет мест и перерисовка карточек каждые 3 секунды
+    // Авто-обновление каждые 3 секунды
     setInterval(() => {
         checkAndReleaseBookings();
         updateGuestsDropdown();
         renderClientRooms();
     }, 3000);
 
-    // 2. Мгновенная реакция на изменения, сделанные в админке (в соседней вкладке браузера)
+    // Слушатель изменений из панели администратора (в соседней вкладке)
     window.addEventListener('storage', (e) => {
         if (e.key === 'gs_hostel_rooms' || e.key === 'gs_active_bookings') {
             checkAndReleaseBookings();
@@ -1843,23 +1803,6 @@
             renderClientRooms();
         }
     });
-     const API_URL = "https://api.npoint.io/1234567890abcdef1234"; // Вставьте вашу ссылку npoint
-
-async function loadRoomsForClient() {
-    try {
-        const response = await fetch(API_URL);
-        const data = await response.json();
-        
-        // Передаем данные комнат в вашу функцию отрисовки карточек на сайте
-        renderRoomsOnWebsite(data.rooms); 
-    } catch (error) {
-        console.error("Ошибка получения данных свободных мест:", error);
-    }
-}
-
-// Загружаем места при открытии страницы и обновляем каждые 5 секунд
-loadRoomsForClient();
-setInterval(loadRoomsForClient, 5000);
 </script>
             
 <script> 
@@ -2013,7 +1956,43 @@ setInterval(loadRoomsForClient, 5000);
             if (e.key === 'ArrowRight') moveLightbox(1);
         });
     </script>
-    
+    <!-- Подключение Firebase Realtime Database -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+  import { getDatabase, ref, onValue, set, push } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDeGgiX48dBFurvnNKh24p_0vglPkEz1fk",
+    authDomain: "gshostel-2774c.firebaseapp.com",
+    projectId: "gshostel-2774c",
+    storageBucket: "gshostel-2774c.firebasestorage.app",
+    messagingSenderId: "2821546272",
+    appId: "1:2821546272:web:36f595cc9490195f487745",
+    measurementId: "G-11GN6NF2DK",
+    databaseURL: "https://gshostel-2774c-default-rtdb.firebaseio.com"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+
+  // Слушаем изменения цен и свободного места из админки
+  onValue(ref(db, 'rooms'), (snapshot) => {
+    const data = snapshot.val();
+    if (data) {
+      localStorage.setItem('gs_hostel_rooms', JSON.stringify(data));
+      if (typeof renderRooms === 'function') renderRooms();
+    }
+  });
+
+  // Функция для отправки новой брони с сайта в базу
+  window.sendBookingToFirebase = function(bookingData) {
+    const newBookingRef = push(ref(db, 'bookings'));
+    return set(newBookingRef, {
+      ...bookingData,
+      createdAt: new Date().toISOString()
+    });
+  };
+</script>
 
 </body>
 </html>
