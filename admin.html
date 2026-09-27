@@ -118,6 +118,7 @@
             margin-top: 10px;
         }
         .btn-reset { background: #e74c3c; margin-top: 20px; }
+        .btn-cancel { background: #e74c3c; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -156,203 +157,292 @@
     <button type="button" class="btn-main btn-reset" onclick="resetAllData()">⚠️ Сбросить все места (Освободить 100%)</button>
 
 <script>
-    // ⚠️ ВСТАВЬТЕ СЮДА ВАШУ ССЫЛКУ ИЗ NPOINT (НАПРИМЕР: https://api.npoint.io/abc123xyz456)
-    const API_URL = "https://api.npoint.io/1234567890abcdef1234"; 
-
-    // Базовое состояние базы на случай сброса
     const defaultHostelData = {
-        rooms: {
-            "vip": { title: "VIP-номер (2 чел.)", price: 12000, img: "https://encrypted-tbn0.gstatic.com/licensed-image?q=tbn:ANd9GcSnIaGdo6fdJPLghhV8CQB25Z7qodX7wnOr24mjGioOpdHI18YpR_ovJ9J_Gnn30spNJMMJW0mQBxX3s3I", rooms: [{ id: "vip_1", name: "VIP номер", total: 1, free: 1 }] },
-            "family": { title: "Семейный (4 чел.)", price: 18000, img: "https://encrypted-tbn2.gstatic.com/licensed-image?q=tbn:ANd9GcTmWO7d_LCTzKhpFDtuKLLPpJDpXLcoswRV5LBqDhFAXw166PKE_h8-WsnzwHI1YtDQ44Q6DXzqTr5LG-Y", rooms: [{ id: "fam_1", name: "Семейный номер", total: 1, free: 1 }] },
-            "male": { 
-                title: "Мужской номер", price: 6000, img: "https://i.ibb.co.com/XrrhR3Ff/photo-2026-09-26-03-47-37.jpg",
-                rooms: [
-                    { id: "m_1", name: "Комната №1 (8 мест)", total: 8, free: 8 },
-                    { id: "m_2", name: "Комната №2 (8 мест)", total: 8, free: 8 },
-                    { id: "m_3", name: "Комната №3 (8 мест)", total: 8, free: 8 }
-                ] 
-            },
-            "female": { 
-                title: "Женский номер", price: 6000, img: "https://i.ibb.co.com/zTmjR0fH/photo-2026-09-26-03-47-52.jpg",
-                rooms: [
-                    { id: "f_1", name: "Комната №1 (14 мест)", total: 14, free: 14 },
-                    { id: "f_2", name: "Комната №2 (10 мест)", total: 10, free: 10 }
-                ] 
-            }
+        "vip": { 
+            title: "VIP-номер (до 2 чел.)", 
+            price: 12000, 
+            type: "room", 
+            rooms: [{ id: "vip_1", name: "VIP номер", total: 1, free: 1 }] 
         },
-        bookings: []
+        "family": { 
+            title: "Семейный (до 4 чел.)", 
+            price: 18000, 
+            type: "room", 
+            rooms: [{ id: "fam_1", name: "Семейный номер", total: 1, free: 1 }] 
+        },
+        "male": { 
+            title: "Мужской номер", 
+            price: 6000, 
+            type: "bed", 
+            rooms: [
+                { id: "m_1", name: "Комната №1 (8 мест)", total: 8, free: 8 },
+                { id: "m_2", name: "Комната №2 (8 мест)", total: 8, free: 8 },
+                { id: "m_3", name: "Комната №3 (8 мест)", total: 8, free: 8 }
+            ] 
+        },
+        "female": { 
+            title: "Женский номер", 
+            price: 6000, 
+            type: "bed", 
+            rooms: [
+                { id: "f_1", name: "Комната №1 (14 мест)", total: 14, free: 14 },
+                { id: "f_2", name: "Комната №2 (10 мест)", total: 10, free: 10 }
+            ] 
+        }
     };
 
-    let currentDB = { rooms: {}, bookings: [] };
+    function getHostelData() {
+        const saved = localStorage.getItem('gs_hostel_rooms');
+        return saved ? JSON.parse(saved) : defaultHostelData;
+    }
 
-    // Загрузка данных из облака
-    async function fetchDatabase() {
-        try {
-            const res = await fetch(API_URL);
-            const data = await res.json();
-            
-            // Если в npoint еще пустой объект или нет ключа rooms, ставим структуру по умолчанию
-            if (!data || !data.rooms) {
-                currentDB = defaultHostelData;
-                await saveDatabase();
-            } else {
-                currentDB = data;
+    function saveHostelData(data) {
+        localStorage.setItem('gs_hostel_rooms', JSON.stringify(data));
+        if (typeof window.syncRoomsToFirebase === 'function') {
+            window.syncRoomsToFirebase(data);
+        }
+    }
+
+    // Автоматическая проверка и освобождение просроченных броней
+    function checkAndReleaseBookings() {
+        const data = getHostelData();
+        let activeBookings = JSON.parse(localStorage.getItem('gs_active_bookings') || '[]');
+        const now = new Date();
+        let updated = false;
+
+        activeBookings = activeBookings.filter(booking => {
+            const checkoutDate = new Date(booking.checkoutDateTime);
+            if (now >= checkoutDate) {
+                for (let catKey in data) {
+                    let room = data[catKey].rooms.find(r => r.id === booking.roomId);
+                    if (room) {
+                        room.free = Math.min(room.total, room.free + (booking.guestsCount || 1));
+                        updated = true;
+                        break;
+                    }
+                }
+                if (booking.fbKey && typeof window.removeBookingFromFirebase === 'function') {
+                    window.removeBookingFromFirebase(booking.fbKey);
+                }
+                return false;
             }
+            return true;
+        });
 
-            renderAdminRooms();
-            renderBookingsTable();
-        } catch (err) {
-            console.error("Ошибка загрузки данных из сети:", err);
+        if (updated) {
+            saveHostelData(data);
+            localStorage.setItem('gs_active_bookings', JSON.stringify(activeBookings));
         }
     }
 
-    // Сохранение обновлений в облако npoint
-    async function saveDatabase() {
-        try {
-            await fetch(API_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(currentDB)
-            });
-            renderAdminRooms();
-            renderBookingsTable();
-        } catch (err) {
-            console.error("Ошибка сохранения данных в сеть:", err);
-        }
-    }
-
-    // Отображение карточек комнат и мест
+    // Отрисовка сетки категорий и комнат
     function renderAdminRooms() {
-        const grid = document.getElementById('admin-rooms-grid');
-        if (!grid || !currentDB.rooms) return;
-        
-        grid.innerHTML = '';
+        const data = getHostelData();
+        const container = document.getElementById('admin-rooms-grid');
+        if (!container) return;
+        container.innerHTML = '';
 
-        for (let catKey in currentDB.rooms) {
-            const cat = currentDB.rooms[catKey];
-            let totalFree = cat.rooms.reduce((acc, r) => acc + r.free, 0);
-            let totalAll = cat.rooms.reduce((acc, r) => acc + r.total, 0);
+        for (let catKey in data) {
+            const cat = data[catKey];
+            let roomsRowsHtml = '';
 
-            let roomsRows = '';
             cat.rooms.forEach(r => {
-                roomsRows += `
+                roomsRowsHtml += `
                     <div class="room-row">
                         <div>
                             <div class="room-info">${r.name}</div>
-                            <div class="room-sub">Всего: ${r.total} мест</div>
+                            <div class="room-sub">Свободно: ${r.free} из ${r.total}</div>
                         </div>
                         <div class="counter-btn-group">
-                            <button type="button" class="btn-cnt btn-minus" onclick="updateRoomFree('${catKey}', '${r.id}', -1)">-</button>
+                            <button class="btn-cnt btn-minus" onclick="changeFreeSeats('${catKey}', '${r.id}', -1)">-</button>
                             <span class="cnt-val">${r.free}</span>
-                            <button type="button" class="btn-cnt btn-plus" onclick="updateRoomFree('${catKey}', '${r.id}', 1)">+</button>
+                            <button class="btn-cnt btn-plus" onclick="changeFreeSeats('${catKey}', '${r.id}', 1)">+</button>
                         </div>
                     </div>
                 `;
             });
 
-            grid.innerHTML += `
+            container.innerHTML += `
                 <div class="card">
-                    <h2>
-                        <span>${cat.title}</span>
-                        <span style="font-size:14px; color:#16a085;">${totalFree} / ${totalAll} свободна</span>
-                    </h2>
-                    ${roomsRows}
+                    <h2>${cat.title} <span>${cat.price.toLocaleString()} ₸</span></h2>
+                    ${roomsRowsHtml}
                 </div>
             `;
         }
     }
 
-    // Изменение свободных мест при клике на кнопки "+" и "-"
-    async function updateRoomFree(catKey, roomId, delta) {
-        if (!currentDB.rooms[catKey]) return;
-        let room = currentDB.rooms[catKey].rooms.find(r => r.id === roomId);
-        
-        if (room) {
-            let newVal = room.free + delta;
-            if (newVal >= 0 && newVal <= room.total) {
-                room.free = newVal;
-                await saveDatabase();
-            }
-        }
-    }
-
-    // Отрисовка таблицы с бронированиями
+    // Отрисовка таблицы бронирований
     function renderBookingsTable() {
+        const activeBookings = JSON.parse(localStorage.getItem('gs_active_bookings') || '[]');
         const tbody = document.getElementById('bookings-table-body');
         if (!tbody) return;
         tbody.innerHTML = '';
 
-        if (!currentDB.bookings || currentDB.bookings.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#888;">Активных бронирований нет</td></tr>';
+        if (activeBookings.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#7f8c8d;">Нет активных бронирований</td></tr>';
             return;
         }
 
-        currentDB.bookings.forEach((b, index) => {
-            let roomName = 'Комната';
-            for (let catKey in currentDB.rooms) {
-                let r = currentDB.rooms[catKey].rooms.find(rm => rm.id === b.roomId);
-                if (r) { roomName = r.name; break; }
-            }
-
+        activeBookings.forEach((b, index) => {
+            const checkout = b.checkoutDateTime ? b.checkoutDateTime.replace('T', ' ') : b.checkoutDate || '—';
             tbody.innerHTML += `
                 <tr>
-                    <td><b>${b.guestName || 'Заявка с сайта'}</b><br><small style="color:#888">${b.guestPhone || ''}</small></td>
-                    <td>${roomName}</td>
-                    <td><b>${b.guestsCount} чел.</b></td>
-                    <td>${b.checkoutDateTime ? b.checkoutDateTime.replace('T', ' ') : '-'}</td>
-                    <td><span class="badge-active">Заселён</span></td>
+                    <td><b>${b.guestName || 'Без имени'}</b><br><small style="color:#7f8c8d;">${b.guestPhone || ''}</small></td>
+                    <td>${b.roomName || b.roomId || '—'}</td>
+                    <td><b>${b.guestsCount || 1}</b></td>
+                    <td>${checkout}</td>
+                    <td><span class="badge-active">Проживает</span></td>
                     <td>
-                        <button type="button" style="background:#e74c3c; color:#fff; border:none; padding:5px 10px; border-radius:5px; cursor:pointer; font-size:12px;" onclick="releaseBookingEarly(${index})">
-                            Выселить
-                        </button>
+                        <button class="btn-cancel" onclick="cancelBooking(${index})">Выселить</button>
                     </td>
                 </tr>
             `;
         });
     }
 
-    // Выселение гостя
-    async function releaseBookingEarly(index) {
-        let b = currentDB.bookings[index];
-        if (b) {
-            for (let catKey in currentDB.rooms) {
-                let room = currentDB.rooms[catKey].rooms.find(r => r.id === b.roomId);
+    // Изменение свободных мест вручную
+    function changeFreeSeats(catKey, roomId, delta) {
+        const data = getHostelData();
+        const room = data[catKey].rooms.find(r => r.id === roomId);
+
+        if (room) {
+            let newFree = room.free + delta;
+            if (newFree >= 0 && newFree <= room.total) {
+                room.free = newFree;
+                saveHostelData(data);
+                refreshAdminData(false);
+            } else {
+                alert('Количество свободных мест не может быть меньше 0 или больше максимума!');
+            }
+        }
+    }
+
+    // Отмена / выселение
+    function cancelBooking(index) {
+        let activeBookings = JSON.parse(localStorage.getItem('gs_active_bookings') || '[]');
+        const booking = activeBookings[index];
+
+        if (booking && confirm(`Выселить гостя ${booking.guestName || ''}?`)) {
+            const data = getHostelData();
+            for (let catKey in data) {
+                let room = data[catKey].rooms.find(r => r.id === booking.roomId);
                 if (room) {
-                    room.free = Math.min(room.total, room.free + b.guestsCount);
+                    room.free = Math.min(room.total, room.free + (booking.guestsCount || 1));
                     break;
                 }
             }
-            currentDB.bookings.splice(index, 1);
-            await saveDatabase();
+
+            if (booking.fbKey && typeof window.removeBookingFromFirebase === 'function') {
+                window.removeBookingFromFirebase(booking.fbKey);
+            }
+
+            activeBookings.splice(index, 1);
+            saveHostelData(data);
+            localStorage.setItem('gs_active_bookings', JSON.stringify(activeBookings));
+            refreshAdminData(false);
         }
     }
 
-    // Кнопка полных настроек / сброса
-    async function resetAllData() {
-        if (confirm('Сбросить все комнаты к 100% свободных мест?')) {
-            currentDB = defaultHostelData;
-            await saveDatabase();
-        }
+    // Полное обновление интерфейса
+    function refreshAdminData(shouldCheck = true) {
+        if (shouldCheck) checkAndReleaseBookings();
+        renderAdminRooms();
+        renderBookingsTable();
     }
 
-    // Ручное обновление данных по кнопке
+    // Функция для кнопки «Обновить»
     function manualRefresh(btn) {
-        fetchDatabase();
         if (btn) {
-            btn.innerHTML = '✓ Обновлено';
-            btn.style.background = '#27ae60';
-            setTimeout(() => {
-                btn.innerHTML = '🔄 Обновить';
-                btn.style.background = '#16a085';
-            }, 600);
+            btn.style.transform = 'scale(0.95)';
+            setTimeout(() => btn.style.transform = 'none', 150);
+        }
+        refreshAdminData(true);
+    }
+
+    // Кнопка принудительного сброса (Освободить 100%)
+    function resetAllData() {
+        if (confirm("Вы точно хотите освободить 100% мест и отменить все текщие бронирования?")) {
+            const data = getHostelData();
+            for (let catKey in data) {
+                data[catKey].rooms.forEach(r => {
+                    r.free = r.total;
+                });
+            }
+            saveHostelData(data);
+            localStorage.setItem('gs_active_bookings', JSON.stringify([]));
+            refreshAdminData(false);
+            alert("Все места успешно освобождены!");
         }
     }
 
-    // Авто-обновление из облака каждые 4 секунды
-    setInterval(fetchDatabase, 4000);
-    
-    // Первичная загрузка при открытии
-    window.addEventListener('DOMContentLoaded', fetchDatabase);
+    // Старт
+    window.addEventListener('DOMContentLoaded', () => {
+        refreshAdminData();
+    });
+
+    // Регулярная проверка просроченных выездов
+    setInterval(() => {
+        checkAndReleaseBookings();
+    }, 5000);
+
+    // Слушатель для смены в соседних вкладках
+    window.addEventListener('storage', (e) => {
+        if (e.key === 'gs_hostel_rooms' || e.key === 'gs_active_bookings') {
+            refreshAdminData(false);
+        }
+    });
+</script>
+
+<!-- Подключение Firebase в Админку -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+  import { getDatabase, ref, onValue, set, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDeGgiX48dBFurvnNKh24p_0vglPkEz1fk",
+    authDomain: "gshostel-2774c.firebaseapp.com",
+    projectId: "gshostel-2774c",
+    storageBucket: "gshostel-2774c.firebasestorage.app",
+    messagingSenderId: "2821546272",
+    appId: "1:2821546272:web:36f595cc9490195f487745",
+    measurementId: "G-11GN6NF2DK",
+    databaseURL: "https://gshostel-2774c-default-rtdb.firebaseio.com"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+
+  // Слушаем изменения комнат из БД
+  onValue(ref(db, 'rooms'), (snapshot) => {
+    const data = snapshot.val();
+    if (data) {
+      localStorage.setItem('gs_hostel_rooms', JSON.stringify(data));
+      if (typeof refreshAdminData === 'function') refreshAdminData(false);
+    }
+  });
+
+  // Слушаем поступающие брони из БД
+  onValue(ref(db, 'bookings'), (snapshot) => {
+    const data = snapshot.val();
+    const list = [];
+    if (data) {
+      Object.keys(data).forEach(key => {
+        list.push({ fbKey: key, ...data[key] });
+      });
+    }
+    localStorage.setItem('gs_active_bookings', JSON.stringify(list));
+    if (typeof renderBookingsTable === 'function') renderBookingsTable();
+  });
+
+  // Сохранение изменений в БД
+  window.syncRoomsToFirebase = function(roomsData) {
+    return set(ref(db, 'rooms'), roomsData);
+  };
+
+  // Удаление брони из БД
+  window.removeBookingFromFirebase = function(fbKey) {
+    return remove(ref(db, 'bookings/' + fbKey));
+  };
 </script>
 
 </body>
