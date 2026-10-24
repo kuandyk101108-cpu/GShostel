@@ -284,6 +284,11 @@
             display: block;
         }
 
+        .slide-portrait .banner-img-portrait {
+            object-fit: cover;
+            object-position: center 45%;
+        }
+
         .banner-overlay {
             position: absolute;
             top: 0;
@@ -886,7 +891,7 @@
                 <!-- ГАЛЕРЕЯ-СЛАЙДЕР С ПЕРЕКЛЮЧЕНИЕМ ФОТО -->
                 <div class="slider-container">
                     <div class="slide active">
-                        <img class="banner-img" src="https://i.ibb.co.com/8DdHs1KW/374b3cd6-20ef-4773-bfdf-f0f0b444df88.jpg" alt="GS Hostel">
+                        <img class="banner-img" src="842bfa84-280d-4c67-971d-8ebbfd003bf7.png" alt="GS Hostel">
                         <div class="banner-overlay">
                             <div class="banner-text">
                                 GS HOSTEL
@@ -896,7 +901,7 @@
                     </div>
 
                     <div class="slide">
-                        <img class="banner-img" src="https://i.ibb.co.com/3y1Q9pKP/photo-2026-09-24-16-31-05.jpg" alt="Уют и комфорт">
+                        <img class="banner-img" src="photo_2026-09-24_16-31-05.jpg" alt="Уют и комфорт">
                         <div class="banner-overlay">
                             <div class="banner-text">
                                 УЮТ И КОМФОРТ
@@ -906,7 +911,7 @@
                     </div>
 
                     <div class="slide">
-                        <img class="banner-img" src="https://i.ibb.co.com/m50ymtTC/photo-2026-09-24-17-58-28.jpg" alt="Забота и гигиена">
+                        <img class="banner-img" src="photo_2026-09-24_17-58-28.jpg" alt="Забота и гигиена">
                         <div class="banner-overlay">
                             <div class="banner-text">
                                 Забота и гигиена
@@ -916,11 +921,21 @@
                     </div>
 
                     <div class="slide">
-                        <img class="banner-img" src="https://i.ibb.co.com/zTBkYTsw/c58c0883-7819-465c-adda-ba9dbaef9e5c.jpg" alt="Готов к путешествию">
+                        <img class="banner-img" src="photo_2026-09-24_17-58-41.jpg" alt="Готов к путешествию">
                         <div class="banner-overlay">
                             <div class="banner-text">
                                 Готов к путешествию
                                 <div class="banner-subtext">Безопасное хранение вещей и багажа</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="slide slide-portrait">
+                        <img class="banner-img banner-img-portrait" src="IMG_8372.PNG" alt="Общая кухня GS Hostel">
+                        <div class="banner-overlay">
+                            <div class="banner-text">
+                                КУХНЯ ХОСТЕЛА
+                                <div class="banner-subtext">Пространство для отдыха и общения</div>
                             </div>
                         </div>
                     </div>
@@ -933,6 +948,7 @@
                         <span class="dot" onclick="currentSlide(1)"></span>
                         <span class="dot" onclick="currentSlide(2)"></span>
                         <span class="dot" onclick="currentSlide(3)"></span>
+                        <span class="dot" onclick="currentSlide(4)"></span>
                     </div>
                 </div>
 
@@ -954,7 +970,7 @@
                         <div class="section-title">Что находится рядом с нашим хостелом?</div>
                         <div class="map-slider-card">
                             <div class="map-slide active">
-                                <img class="map-frame" src="https://i.ibb.co.com/RTbvVSVj/photo-2026-09-25-14-53-45.jpg" alt="Дина Супермаркет">
+                                <img class="map-frame" src="photo_2026-09-25_14-53-45.jpg" alt="Дина Супермаркет">
                                 <div class="banner-overlay">
                                     <div class="map-banner-text"> 
                                         Дина Супермаркет
@@ -968,7 +984,7 @@
                             </div>
 
                             <div class="map-slide">
-                                <img class="map-frame" src="https://i.ibb.co.com/bMCBgsZj/photo-2026-09-25-14-53-48.jpg" alt="Парк Здоровья">
+                                <img class="map-frame" src="photo_2026-09-25_14-53-48.jpg" alt="Парк Здоровья">
                                 <div class="banner-overlay">
                                     <div class="map-banner-text">
                                         Парк Здоровья
@@ -982,7 +998,7 @@
                             </div>
 
                             <div class="map-slide">
-                                <img class="map-frame" src="https://i.ibb.co.com/yBBDfW2d/photo-2026-09-25-14-53-52.jpg" alt="Дворец Единоборств">
+                                <img class="map-frame" src="photo_2026-09-25_14-53-52.jpg" alt="Дворец Единоборств">
                                 <div class="banner-overlay">
                                     <div class="map-banner-text">
                                         Дворец Единоборств
@@ -996,7 +1012,7 @@
                             </div>
 
                             <div class="map-slide">
-                                <img class="map-frame" src="https://i.ibb.co.com/6M7TwZ5/photo-2026-09-25-14-53-55.jpg" alt="Академия Творчества">
+                                <img class="map-frame" src="photo_2026-09-25_14-53-55.jpg" alt="Академия Творчества">
                                 <div class="banner-overlay">
                                     <div class="map-banner-text">
                                         Академия Творчества
@@ -1028,11 +1044,11 @@
                     <div class="bottom-slider-container">
                         
                         <div class="bottom-slide active" onclick="openLightbox(0)">
-                            <img class="banner-img" src="https://i.ibb.co.com/F4hCXF34/photo-2026-09-26-03-14-36.jpg" alt="Полное фото">
+                            <img class="banner-img" src="photo_2026-09-26_03-14-36.jpg" alt="Кухня хостела">
                         </div>
 
                         <div class="bottom-slide" onclick="openLightbox(1)">
-                            <img class="banner-img" src="https://i.ibb.co.com/jvQGPtsW/photo-2026-09-26-03-14-40.jpg" alt="Заголовок вверху">
+                            <img class="banner-img" src="photo_2026-09-26_03-14-40.jpg" alt="Кухонная раковина и рабочая зона">
                             <div class="bottom-overlay align-top">
                                 <h3 class="bottom-text-title"></h3>
                                 <p class="bottom-text-desc"></p>
@@ -1040,7 +1056,7 @@
                         </div>
 
                         <div class="bottom-slide" onclick="openLightbox(2)">
-                            <img class="banner-img" src="https://i.ibb.co.com/YB3HWHF5/photo-2026-09-26-03-15-34.jpg" alt="Заголовок в центре">
+                            <img class="banner-img" src="photo_2026-09-26_03-15-34.jpg" alt="Духовой шкаф на кухне">
                             <div class="bottom-overlay align-center">
                                 <h3 class="bottom-text-title" style="text-align: center;"></h3>
                                 <p class="bottom-text-desc" style="text-align: center;"></p>
@@ -1048,7 +1064,7 @@
                         </div>
                         
                         <div class="bottom-slide" onclick="openLightbox(3)">
-                            <img class="banner-img" src="https://i.ibb.co.com/s9MpN8G5/photo-2026-09-26-03-14-57.jpg" alt="Заголовок в центре">
+                            <img class="banner-img" src="photo_2026-09-26_03-14-57.jpg" alt="Кухонная варочная панель">
                             <div class="bottom-overlay align-center">
                                 <h3 class="bottom-text-title" style="text-align: center;"></h3>
                                 <p class="bottom-text-desc" style="text-align: center;"></p>
@@ -1203,8 +1219,8 @@
             .room-price { font-size: 14px; background: rgba(22, 160, 133, 0.25); color: #2ecc71; border: 1px solid #16a085; padding: 4px 10px; border-radius: 20px; font-weight: 600; }
 
             .room-body { padding: 18px; flex-grow: 1; display: flex; flex-direction: column; }
-            .room-image-wrap { width: 100%; height: 190px; border-radius: 10px; overflow: hidden; margin-bottom: 12px; position: relative; background: #2c3e50; }
-            .room-image-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
+            .room-image-wrap { width: 100%; aspect-ratio: 4 / 3; border-radius: 10px; overflow: hidden; margin-bottom: 12px; position: relative; background: #f1f4f8; }
+            .room-image-wrap img { width: 100%; height: 100%; object-fit: cover; object-position: center; display: block; }
             
             .subroom-list { margin-top: 10px; background: #f8fafb; border-radius: 8px; padding: 10px; }
             .subroom-item { font-size: 13px; display: flex; justify-content: space-between; margin-bottom: 6px; padding-bottom: 6px; border-bottom: 1px dashed #e1e8ed; }
@@ -1366,48 +1382,47 @@
 
 <script>
     (function() { emailjs.init("TIdW62J2L_Qoq6GD1"); })();
-
-    const defaultHostelData = {
-        "vip": { 
-            title: "VIP-номер (до 2 чел.)", 
-            price: 12000, 
-            type: "room", 
-            maxCapacity: 2,
-            img: "https://encrypted-tbn0.gstatic.com/licensed-image?q=tbn:ANd9GcSnIaGdo6fdJPLghhV8CQB25Z7qodX7wnOr24mjGioOpdHI18YpR_ovJ9J_Gnn30spNJMMJW0mQBxX3s3I", 
-            rooms: [{ id: "vip_1", name: "VIP номер", total: 1, free: 1 }] 
-        },
-        "family": { 
-            title: "Семейный (до 4 чел.)", 
-            price: 18000, 
-            type: "room", 
-            maxCapacity: 4,
-            img: "https://i.ibb.co.com/zTGhsH6d/photo-2026-10-09-17-31-30.jpg", 
-            rooms: [{ id: "fam_1", name: "Семейный номер", total: 1, free: 1 }] 
-        },
-        "male": { 
-            title: "Мужской номер", 
-            price: 6000, 
-            type: "bed", 
-            maxCapacity: 24,
-            img: "https://i.ibb.co.com/Q3KgLptG/IMG-7739.avif"",
-            rooms: [
-                { id: "m_1", name: "Комната №1 (8 мест)", total: 8, free: 8 },
-                { id: "m_2", name: "Комната №2 (8 мест)", total: 8, free: 8 },
-                { id: "m_3", name: "Комната №3 (8 мест)", total: 8, free: 8 }
-            ] 
-        },
-        "female": { 
-            title: "Женский номер", 
-            price: 6000, 
-            type: "bed", 
-            maxCapacity: 24,
-            img: "https://i.ibb.co.com/zTmjR0fH/photo-2026-09-26-03-47-52.jpg",
-            rooms: [
-                { id: "f_1", name: "Комната №1 (14 мест)", total: 14, free: 14 },
-                { id: "f_2", name: "Комната №2 (10 мест)", total: 10, free: 10 }
-            ] 
-        }
-    };
+const defaultHostelData = {
+    "vip": { 
+        title: "VIP-номер (до 2 чел.)", 
+        price: 12000, 
+        type: "room", 
+        maxCapacity: 2,
+        img: "https://i.ibb.co.com/Cp5gVmMX/IMG-8397.png", 
+        rooms: [{ id: "vip_1", name: "VIP номер", total: 1, free: 1 }] 
+    },
+    "family": { 
+        title: "Семейный (до 4 чел.)", 
+        price: 18000, 
+        type: "room", 
+        maxCapacity: 4,
+        img: "https://i.ibb.co.com/LhCJ1Hds/photo-2026-10-09-17-25-06-2.jpg", 
+        rooms: [{ id: "fam_1", name: "Семейный номер", total: 1, free: 1 }] 
+    },
+    "male": { 
+        title: "Мужской номер", 
+        price: 6000, 
+        type: "bed", 
+        maxCapacity: 24,
+        img: "https://i.ibb.co.com/Xnyyncb/IMG-7745.avif",
+        rooms: [
+            { id: "m_1", name: "Комната №1 (8 мест)", total: 8, free: 8 },
+            { id: "m_2", name: "Комната №2 (8 мест)", total: 8, free: 8 },
+            { id: "m_3", name: "Комната №3 (8 мест)", total: 8, free: 8 }
+        ] 
+    },
+    "female": { 
+        title: "Женский номер", 
+        price: 6000, 
+        type: "bed", 
+        maxCapacity: 24,
+        img: "https://i.ibb.co.com/jks5cqDp/IMG-8401.png",
+        rooms: [
+            { id: "f_1", name: "Комната №1 (14 мест)", total: 14, free: 14 },
+            { id: "f_2", name: "Комната №2 (10 мест)", total: 10, free: 10 }
+        ] 
+    }
+};
 
     let activeGuestType = 'rk';
     let currentNights = 1;
@@ -1416,7 +1431,16 @@
 
     function getHostelData() {
         const saved = localStorage.getItem('gs_hostel_rooms');
-        return saved ? JSON.parse(saved) : defaultHostelData;
+        if (!saved) return defaultHostelData;
+
+        const data = JSON.parse(saved);
+        for (const catKey in data) {
+            const defaultImage = defaultHostelData[catKey]?.img;
+            if (defaultImage) {
+                data[catKey].img = defaultImage;
+            }
+        }
+        return data;
     }
 
     function saveHostelData(data) {
@@ -1886,10 +1910,10 @@
         const bottomDots = document.querySelectorAll('.bottom-dot');
 
         const galleryImages = [
-            "https://i.ibb.co.com/F4hCXF34/photo-2026-09-26-03-14-36.jpg",
-            "https://i.ibb.co.com/jvQGPtsW/photo-2026-09-26-03-14-40.jpg",
-            "https://i.ibb.co.com/YB3HWHF5/photo-2026-09-26-03-15-34.jpg",
-            "https://i.ibb.co.com/s9MpN8G5/photo-2026-09-26-03-14-57.jpg"
+            "photo_2026-09-26_03-14-36.jpg",
+            "photo_2026-09-26_03-14-40.jpg",
+            "photo_2026-09-26_03-15-34.jpg",
+            "photo_2026-09-26_03-14-57.jpg"
 
         ];
 
